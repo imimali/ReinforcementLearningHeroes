@@ -28,7 +28,7 @@ def policy_evaluation(policy, environment, discount_factor=1.0, theta=1e-9, max_
                 for state_prob, next_state, reward, done in environment.P[state][action]:
                     v += action_prob * state_prob * (reward + discount_factor * V[next_state])
 
-            delta = max(delta, abs(V[state] - V))
+            delta = max(delta, abs(V[state] - v))
             V[state] = v
 
         evaluation_iters += 1
@@ -44,7 +44,7 @@ def policy_iteration(environment, discount_factor=1.0, max_iters=1e9):
         stable_policy = True
         V = policy_evaluation(policy, environment, discount_factor=discount_factor)
 
-        for state in environment.nS:
+        for state in range(environment.nS):
             current_action = np.argmax(policy[state])
             action_values = one_step_lookahead(environment, state, V, discount_factor)
             best_action = np.argmax(action_values)
@@ -61,7 +61,7 @@ def value_iteration(environment, discount_factor=1.0, theta=1e-9, max_iterations
     V = np.zeros(environment.nS)
     for i in range(int(max_iterations)):
         delta = 0
-        for state in environment.nS:
+        for state in range(environment.nS):
             action_values = one_step_lookahead(environment, state, V, discount_factor)
 
             best_action_value = np.max(action_values)
