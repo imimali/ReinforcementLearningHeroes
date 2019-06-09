@@ -74,3 +74,35 @@ def test_policy(policy, env):
     return wins / r
 
 
+def create_random_policy(env):
+    policy = {}
+    for key in range(env.observation_space.n):
+        current_end = 0
+        p = {}
+        policy[key] = random.choice(range(env.observation_space.n))
+    return policy
+
+
+def sarsa(env, episodes=100, step_size=0.01, epsilon=0.01):
+    policy = create_random_policy(env)
+    Q = create_state_action_dictionary(env, policy)
+    for episode in range(episodes):
+        print("starting episode", episode)
+        env.reset()
+        S = env.env.s
+        A = greedy_policy(Q)[S]
+        done = False
+        while not done:
+            S_prime, reward, done, info = env.step(A)
+            A_prime = greedy_policy(Q)[S_prime]
+            Q[S][A] = Q[S][A] + step_size * (reward + epsilon * Q[S_prime][A_prime] - Q[S][A])
+            S = S_prime
+            A = A_prime
+    return greedy_policy(Q), Q
+
+
+import gym
+
+environment = gym.make('FrozenLake8x8-v0')
+policy, Q = sarsa(environment, episodes=1000, step_size=0.01, epsilon=0.1)
+print(test_policy(policy, environment))
