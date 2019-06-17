@@ -19,6 +19,7 @@ def run_game(env, policy, display=True, should_return=True):
         timestep = [s]
         action = policy[s]
         state, reward, done, info = env.step(action)
+
         timestep.append(action)
         timestep.append(reward)
         episode.append(timestep)
@@ -58,18 +59,21 @@ def field_list(env):
 def create_state_action_dictionary(env, policy):
     Q = {}
     fields = field_list(env)
-    for key in policy:
-        Q[key] = {a: 0.0 for a in range(env.action_space.n)}
-
+    for key in policy.keys():
+        if fields[key] in ['F', 'S']:
+            Q[key] = {a: 0.0 for a in range(0, env.action_space.n)}
+        else:
+            Q[key] = {a: 0.0 for a in range(0, env.action_space.n)}
     return Q
 
 
 def test_policy(policy, env):
     wins = 0
-    r = 1000
+    r = 10000
     for i in range(r):
-        w = run_game(env, policy, display=False)[-1][-1]
-        if w == 1:
+        w = run_game(env, policy, display=False)
+        print(w)
+        if w[-1][-1] == 1:
             wins += 1
     return wins / r
 
@@ -77,9 +81,11 @@ def test_policy(policy, env):
 def create_random_policy(env):
     policy = {}
     for key in range(env.observation_space.n):
-        current_end = 0
+
         p = {}
-        policy[key] = random.choice(range(env.observation_space.n))
+        for action in range(0, env.action_space.n):
+            p[action] = 1 / env.action_space.n
+        policy[key] = p
     return policy
 
 
@@ -87,22 +93,25 @@ def sarsa(env, episodes=100, step_size=0.01, epsilon=0.01):
     policy = create_random_policy(env)
     Q = create_state_action_dictionary(env, policy)
     for episode in range(episodes):
-        print("starting episode", episode)
         env.reset()
         S = env.env.s
         A = greedy_policy(Q)[S]
-        done = False
-        while not done:
-            S_prime, reward, done, info = env.step(A)
+        finished = False
+        total = 0.0
+        while not finished:
+            S_prime, reward, finished, _ = env.step(A)
+            total += reward
             A_prime = greedy_policy(Q)[S_prime]
             Q[S][A] = Q[S][A] + step_size * (reward + epsilon * Q[S_prime][A_prime] - Q[S][A])
             S = S_prime
             A = A_prime
+        print("episode", episode, "terminated with reward", total)
+
     return greedy_policy(Q), Q
 
 
 import gym
 
 environment = gym.make('FrozenLake8x8-v0')
-policy, Q = sarsa(environment, episodes=1000, step_size=0.01, epsilon=0.1)
-print(test_policy(policy, environment))
+pol, Q = sarsa(environment, episodes=1000, step_size=0.2, epsilon=0.2)
+print(test_policy(pol, environment))
