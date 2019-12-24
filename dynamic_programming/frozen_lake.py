@@ -28,7 +28,6 @@ def play_episodes(environement, n_episodes, policy):
         while not terminated:
             action = np.argmax(policy[state])
 
-
             next_state, reward, terminated, info = environement.step(action)
             # environement.render()
 

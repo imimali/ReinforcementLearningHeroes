@@ -330,13 +330,13 @@ if __name__ == '__main__':
     total_t = 0
     experience_replay_buffer = ReplayMemory()
     episode_rewards = np.zeros(num_episodes)
-
+    model_save_dir='model_params.npz'
+    episode_reward_dir='episode_rewards.npz'
     # epsilon
     # decays linearly until 0.1
     epsilon = 1.0
     epsilon_min = 0.1
     epsilon_change = (epsilon - epsilon_min) / 500000
-
     # Create environment
     env = gym.envs.make("Breakout-v0")
 
@@ -352,6 +352,7 @@ if __name__ == '__main__':
         hidden_layer_sizes=hidden_layer_sizes,
         scope="target_model"
     )
+    model.load()
     image_transformer = ImageTransformer()
 
     with tf.Session() as sess:
@@ -359,7 +360,7 @@ if __name__ == '__main__':
         target_model.set_session(sess)
         sess.run(tf.global_variables_initializer())
 
-        print("Populating experience replay buffer...")
+        print("Populating e xperience replay buffer...")
         obs = env.reset()
 
         for i in range(MIN_EXPERIENCES):
@@ -389,6 +390,10 @@ if __name__ == '__main__':
                 epsilon_change,
                 epsilon_min,
             )
+            if i%TARGET_UPDATE_PERIOD==0:
+                np.savez(episode_reward_dir,episode_rewards)
+                model.save()
+
             episode_rewards[i] = episode_reward
 
             last_100_avg = episode_rewards[max(0, i - 100):i + 1].mean()
